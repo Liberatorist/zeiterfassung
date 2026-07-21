@@ -25,6 +25,7 @@
     <docker-publish-registry-path>path/example</docker-publish-registry-path>
     <docker-publish-registry-username>username</docker-publish-registry-username>
     <docker-publish-registry-password>password</docker-publish-registry-password>
+    <docker-publish-image-name>${docker-publish-registry}/${docker-publish-registry-path}/${project.artifactId}:${project.version}</docker-publish-image-name>
   </properties>
 
   <scm>
@@ -253,7 +254,7 @@
           </profiles>
           <image>
             <name>
-              ${docker-publish-registry}/${docker-publish-registry-path}/${project.artifactId}:${project.version}
+              ${docker-publish-image-name}
             </name>
             <env>
               <BPE_DEFAULT_BPL_JVM_CLASS_ADJUSTMENT>120%</BPE_DEFAULT_BPL_JVM_CLASS_ADJUSTMENT>

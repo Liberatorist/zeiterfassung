@@ -97,16 +97,16 @@
               </svg>
               <div class="ajax-loader time-entry-cell-container">
                 <div class="time-entry-cell time-entry-cell__comment">
-                  <input
-                    type="text"
+                  <textarea
                     id="input-entry-comment"
                     th:id="|${rnd}-input-entry-comment|"
                     name="comment"
-                    th:value="${timeEntry.comment}"
+                    rows="2"
+                    th:text="${timeEntry.comment}"
                     th:placeholder="#{time-entry.form.comment.input.placeholder}"
                     th:disabled="${disabled}"
                     data-testid="input-time-entry-comment"
-                  />
+                  ></textarea>
                   <label
                     for="input-entry-comment"
                     th:for="|${rnd}-input-entry-comment|"

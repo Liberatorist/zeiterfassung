@@ -34,7 +34,6 @@ public class TimeEntryEntity extends AbstractTenantAwareEntity {
     private String owner;
 
     @Column(name = "comment")
-    @Size(max = 255)
     private String comment;
 
     @Column(name = "start", nullable = false)

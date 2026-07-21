@@ -96,6 +96,11 @@
   .time-entry-cell__comment {
     grid-row-start: 1;
     grid-column: 1 / span 5;
+
+    textarea {
+      resize: vertical;
+      min-height: --spacing(9);
+    }
   }
 
   .time-entry-cell__from {

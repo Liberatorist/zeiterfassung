@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'zeiterfassung*'
 
@@ -9,8 +11,12 @@ env:
   MAVEN_ARGS: "--no-transfer-progress --errors --fail-at-end --show-version"
 
 jobs:
-  create-github-release:
+  publish-docker-image-main:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-publish
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a
@@ -18,45 +24,19 @@ jobs:
           distribution: 'liberica'
           java-version-file: ".tool-versions"
           cache: 'maven'
-      - name: Build with Maven
-        run: ./mvnw package
-      - name: Extract release tag
-        id: vars
-        run: echo "version=${GITHUB_REF#refs/*/zeiterfassung-}" >> $GITHUB_OUTPUT
-      - name: Create Release
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: ${{ steps.vars.outputs.version }}
-          body_path: .chglog/${{ steps.vars.outputs.version }}.md
-          files: |
-              ./target/zeiterfassung-*.jar
 
-  container-upload-docker-hub-zeiterfassung:
-    needs:
-      - create-github-release
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a
-        with:
-          distribution: 'liberica'
-          java-version-file: ".tool-versions"
-          cache: 'maven'
-      - name: Publish docker image to Docker Hub zeiterfassung
+      - name: Publish docker image to Docker Hub
         run: >
           ./mvnw
           spring-boot:build-image
+          -DskipTests
           -Dspring-boot.build-image.publish=true
-          -Ddocker-publish-registry=registry.hub.docker.com
-          -Ddocker-publish-registry-path=urlaubsverwaltung
+          -Ddocker-publish-image-name=${{ secrets.DOCKER_ZE_IMAGE_NAME }}:${{ github.sha }}
           -Ddocker-publish-registry-username=${{ secrets.DOCKER_ZE_USERNAME }}
           -Ddocker-publish-registry-password=${{ secrets.DOCKER_ZE_TOKEN }}
 
-  container-upload-github:
-    needs:
-      - create-github-release
+  publish-docker-image-release:
+    if: startsWith(github.ref, 'refs/tags/zeiterfassung')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -65,11 +45,13 @@ jobs:
           distribution: 'liberica'
           java-version-file: ".tool-versions"
           cache: 'maven'
-      - name: Publish docker image to GitHub Container Registry
+
+      - name: Publish docker image to Docker Hub
         run: >
-          ./mvnw spring-boot:build-image
+          ./mvnw
+          spring-boot:build-image
+          -DskipTests
           -Dspring-boot.build-image.publish=true
-          -Ddocker-publish-registry=ghcr.io
-          -Ddocker-publish-registry-path=${{ github.repository }}
-          -Ddocker-publish-registry-username=${{ github.actor }}
-          -Ddocker-publish-registry-password=${{ secrets.GITHUB_TOKEN }}
+          -Ddocker-publish-image-name=${{ secrets.DOCKER_ZE_IMAGE_NAME }}:latest
+          -Ddocker-publish-registry-username=${{ secrets.DOCKER_ZE_USERNAME }}
+          -Ddocker-publish-registry-password=${{ secrets.DOCKER_ZE_TOKEN }}
